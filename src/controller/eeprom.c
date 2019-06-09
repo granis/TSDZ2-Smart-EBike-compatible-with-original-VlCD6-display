@@ -68,6 +68,9 @@ static void eeprom_read_values_to_variables(void);
 static void eeprom_write_array(uint8_t *array_values);
 static void variables_to_array(uint8_t *ui8_array);
 
+//=================================================================================================
+//
+//=================================================================================================
 void eeprom_init(void)
 {
 	uint8_t ui8_key1;
@@ -83,6 +86,9 @@ void eeprom_init(void)
   }
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void eeprom_init_variables(void)
 {
   struct_configuration_variables *p_configuration_variables;
@@ -112,6 +118,9 @@ void eeprom_init_variables(void)
   }
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 static void eeprom_read_values_to_variables(void)
 {
   static uint8_t ui8_temp;
@@ -126,6 +135,8 @@ static void eeprom_read_values_to_variables(void)
   p_configuration_variables->ui8_lights = ui8_temp & 1 ? 1 : 0;
   p_configuration_variables->ui8_walk_assist = ui8_temp & (1 << 1) ? 1 : 0;
   p_configuration_variables->ui8_offroad_mode = ui8_temp & (1 << 2) ? 1 : 0;
+  p_configuration_variables->ui8_emtb_mode = ui8_temp & (1 << 3) ? 1 : 0;
+  p_configuration_variables->ui8_emtb_enabled_on_startup = ui8_temp & (1 << 4) ? 1 : 0;
 
   p_configuration_variables->ui8_battery_max_current = FLASH_ReadByte(ADDR_BATTERY_MAX_CURRENT);
   p_configuration_variables->ui8_motor_power_div10 = FLASH_ReadByte(MOTOR_MAX_POWER_DIV10);
@@ -202,6 +213,9 @@ static void eeprom_read_values_to_variables(void)
 	p_configuration_variables->ui8_walk_assist_pwm_duty_cycle = p_configuration_variables->ui8_walk_assist_pwm_duty_cycle_level[0];
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void eeprom_write_variables(void)
 {
   uint8_t array_variables[EEPROM_BYTES_STORED];
@@ -209,6 +223,9 @@ void eeprom_write_variables(void)
   eeprom_write_array(array_variables);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 static void variables_to_array(uint8_t *ui8_array)
 {
   struct_configuration_variables *p_configuration_variables;
@@ -218,7 +235,9 @@ static void variables_to_array(uint8_t *ui8_array)
   ui8_array[1] = p_configuration_variables->ui8_assist_level_factor_x10;
   ui8_array[2] = (p_configuration_variables->ui8_lights & 1) |
                  ((p_configuration_variables->ui8_walk_assist & 1) << 1) |
-                 ((p_configuration_variables->ui8_offroad_mode & 1) << 2);
+                 ((p_configuration_variables->ui8_offroad_mode & 1) << 2) |
+								 ((p_configuration_variables->ui8_emtb_mode & 1) << 3) |
+								 ((p_configuration_variables->ui8_emtb_enabled_on_startup) << 4);
   ui8_array[3] = p_configuration_variables->ui8_battery_max_current;
   ui8_array[4] = p_configuration_variables->ui8_motor_power_div10;
   ui8_array[5] = p_configuration_variables->ui16_battery_low_voltage_cut_off_x10 & 255;
@@ -273,6 +292,9 @@ static void variables_to_array(uint8_t *ui8_array)
 	ui8_array[46] = KEY2;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 static void eeprom_write_array(uint8_t *array)
 {
   uint8_t ui8_i;
@@ -291,6 +313,9 @@ static void eeprom_write_array(uint8_t *array)
 }
 
 #if ENABLE_EEPROM_WRITE_IF_CHANGED
+//=================================================================================================
+//
+//=================================================================================================
 void eeprom_write_if_values_changed(void)
 {
 	// 2018.08.29:

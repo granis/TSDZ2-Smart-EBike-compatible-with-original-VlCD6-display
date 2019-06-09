@@ -11,6 +11,9 @@
 #include "stm8s.h"
 #include "utils.h"
 
+//=================================================================================================
+//
+//=================================================================================================
 int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
   // if input is smaller/bigger than expected return the min/max out ranges value
@@ -28,6 +31,9 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t 
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 int32_t map_inverse(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
   // if input is smaller/bigger than expected return the min/max out ranges value
@@ -39,22 +45,35 @@ int32_t map_inverse(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, 
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint8_t ui8_min(uint8_t value_a, uint8_t value_b)
 {
   if(value_a < value_b) return value_a;
   else return value_b;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint8_t ui8_max(uint8_t value_a, uint8_t value_b)
 {
   if(value_a > value_b) return value_a;
   else return value_b;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void ui8_limit_max(uint8_t *ui8_p_value, uint8_t ui8_max_value)
 {
   if(*ui8_p_value > ui8_max_value) { *ui8_p_value = ui8_max_value; }
 }
+
+//=================================================================================================
+//
+//=================================================================================================
 void pi_controller(struct_pi_controller_state *pi_controller)
 {
   int16_t i16_error;
@@ -75,11 +94,17 @@ void pi_controller(struct_pi_controller_state *pi_controller)
   pi_controller->ui8_controller_output_value = (uint8_t) i16_temp;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void pi_controller_reset(struct_pi_controller_state *pi_controller)
 {
   pi_controller->i16_i_term = 0;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 // from here: https://github.com/FxDev/PetitModbus/blob/master/PetitModbus.c
 /*
  * Function Name        : CRC16

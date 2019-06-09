@@ -10,8 +10,6 @@
 #define _EBIKE_APP_H_
 
 #include <stdint.h>
-
-#include "../common/common.h"
 #include "main.h"
 
 typedef struct _configuration_variables
@@ -24,6 +22,8 @@ typedef struct _configuration_variables
   uint8_t ui8_lights;
   uint8_t ui8_walk_assist;
   uint8_t ui8_offroad_mode;
+  uint8_t ui8_emtb_mode;
+  uint8_t ui8_emtb_enabled_on_startup;
   uint8_t ui8_wheel_max_speed;
   uint8_t ui8_motor_type;
   uint8_t ui8_motor_assistance_startup_without_pedal_rotation;
@@ -46,7 +46,6 @@ typedef struct _configuration_variables
   uint8_t ui8_street_speed_limit;
   uint8_t ui8_street_power_limit_enabled;
   uint8_t ui8_street_power_limit_div25;
-	uint8_t ui8_error_states;
 	uint8_t ui8_working_status;
 	uint8_t ui8_function_code;
 	uint8_t ui8_fault_code;

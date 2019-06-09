@@ -10,6 +10,9 @@
 #include "stm8s_clk.h"
 #include "stm8s_iwdg.h"
 
+//=================================================================================================
+//
+//=================================================================================================
 // PLEASE NOTE: while debuging using STLinkV2, watchdog seems to be disable and to test, you will need to run without the debugger
 void watchdog_init(void)
 {

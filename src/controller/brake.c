@@ -15,8 +15,10 @@
 #include "brake.h"
 #include "motor.h"
 
-// Brake signal
-void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER)
+//=================================================================================================
+//
+//=================================================================================================
+void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER) // Brake signal
 {
   if(brake_is_set())
   {
@@ -28,6 +30,9 @@ void EXTI_PORTC_IRQHandler(void) __interrupt(EXTI_PORTC_IRQHANDLER)
   }
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void brake_init(void)
 {
 	#if ENABLE_BRAKE_SENSOR
@@ -47,6 +52,9 @@ void brake_init(void)
 			    EXTI_SENSITIVITY_RISE_FALL);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 BitStatus brake_is_set(void)
 {
   if(GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN) == 0)

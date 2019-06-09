@@ -17,23 +17,25 @@
 #if ENABLE_VLCD6
 #define ENABLE_VLCD6_COMPATIBILITY						1
 #define ENABLE_VLCD5_COMPATIBILITY						0
-#define ENABLE_SELECT3_COMPATIBILITY					0
+#define ENABLE_XH18_COMPATIBILITY							0
 #elif ENABLE_VLCD5
 #define ENABLE_VLCD5_COMPATIBILITY						1
 #define ENABLE_VLCD6_COMPATIBILITY						0
-#define ENABLE_SELECT3_COMPATIBILITY					0
-#elif ENABLE_SELECTION3
-#define ENABLE_SELECT3_COMPATIBILITY					1
+#define ENABLE_XH18_COMPATIBILITY							0
+#elif ENABLE_XH18
+#define ENABLE_XH18_COMPATIBILITY							1
 #define ENABLE_VLCD6_COMPATIBILITY						0
 #define ENABLE_VLCD5_COMPATIBILITY						0
 #else
 #define ENABLE_VLCD6_COMPATIBILITY						1
 #define ENABLE_VLCD5_COMPATIBILITY						0
-#define ENABLE_SELECT3_COMPATIBILITY					0
+#define ENABLE_XH18_COMPATIBILITY							0
 #endif 
 //---------------------------------------------------------
 #define ENABLE_DEBUG_UART											0
 #define ENABLE_DEBUG_FIRMWARE									0
+//---------------------------------------------------------
+#define ENABLE_ASSIST_LEVEL_EMTB							1
 //---------------------------------------------------------
 #define ENABLE_LAST_ADC_CODE									1
 //---------------------------------------------------------
@@ -46,7 +48,34 @@
 #define ENABLE_LAST_APP_BOOST_CODE						0
 #define ENABLE_LAST_APP_PAS_CADENCE_RPM_CODE	0
 #define ENABLE_LAST_APP_PEDALLING_CODE				0
+//---------------------------------------------------------
+#define CLR_SOFT_START_WHEN_CADENCE_RPM_ZERO	1
+#if CLR_SOFT_START_WHEN_CADENCE_RPM_ZERO
+#define CLR_SOFT_START_WHEN_SPEED_ZERO				0
+#else
+#define CLR_SOFT_START_WHEN_SPEED_ZERO				1
+#endif
+//---------------------------------------------------------
+#define ENABLE_CHECK_SYSTEM_CODE							1
+#if ENABLE_CHECK_SYSTEM_CODE
+#define ENABLE_SAFE_TESTS_CODE								0
+#else
+#define ENABLE_SAFE_TESTS_CODE								1
+#endif
+#if ENABLE_SAFE_TESTS_CODE
 #define ENABLE_LAST_APP_SAFE_TESTS_CODE				0
+#endif
+//---------------------------------------------------------
+#define ENABLE_LOW_PASS_SOFT_START_RAMP				0
+#if ENABLE_LOW_PASS_SOFT_START_RAMP
+#define ENABLE_LINEAR_SOFT_START_RAMP					0
+#else
+#define ENABLE_LINEAR_SOFT_START_RAMP					1
+#endif
+//---------------------------------------------------------
+#define ENABLE_LAST_PEDAL_POWER_DIVISOR				1
+//---------------------------------------------------------
+#define ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM	0
 //---------------------------------------------------------
 #define ENABLE_EEPROM_WRITE_IF_CHANGED				0
 //---------------------------------------------------------
@@ -54,6 +83,8 @@
 #define ENABLE_DISPLAY_WORKING_FLAG						0
 #endif
 /**********************************************
+VLCD6 Faults List:
+----------------------------------------------
 #define NO_FAULT															0
 #define TEMPERATURE_PROTECTION								1
 #define SHORT_CIRCUIT_PROTECTION							2
@@ -66,21 +97,75 @@
 ***********************************************/
 #define NO_FAULT															0
 #define OVERTEMPERATURE												6 // E06
+#if ENABLE_XH18_COMPATIBILITY
+#define EBIKE_WHEEL_BLOCKED										4 // E04
+#else
 #define EBIKE_WHEEL_BLOCKED										7 // E07
+#endif
 #define OVERVOLTAGE														8 // E08
 //---------------------------------------------------------
 #define NO_FUNCTION														0
-#define PENDING_FUNCTION_ABORTED							0
-#define DEFAULT_FUNCTION_ENABLED							0
+#define CLEAR_DISPLAY													0
+#define FUNCTION_CODE_RANGE										9
+#define PENDING_FUNCTION_ABORTED							14
+#define DEFAULT_FUNCTION_ENABLED							15
+
+#if ENABLE_XH18_COMPATIBILITY
 #define DEFAULT_ENABLED_ON_OEM								2 // E02
-#define OFFROAD_FUNCTION_ENABLED							0
-#define STREET_FUNCTION_ENABLED								0
+#else
+#define DEFAULT_ENABLED_ON_OEM								2 // E02
+#endif
+#define OFFROAD_FUNCTION_ENABLED							12
+#define STREET_FUNCTION_ENABLED								13
+#if ENABLE_XH18_COMPATIBILITY
+#define STREET_ENABLED_ON_OEM									2 // E02
+#define OFFROAD_ENABLED_ON_OEM								3 // E03
+#else
 #define STREET_ENABLED_ON_OEM									3 // E03
 #define OFFROAD_ENABLED_ON_OEM								4 // E04
-#define BOOST_FUNCTION_ENABLED								0
-#define BOOST_FUNCTION_DISABLED								0
+#endif
+#define BOOST_FUNCTION_ENABLED								10
+#define BOOST_FUNCTION_DISABLED								11
+#if ENABLE_XH18_COMPATIBILITY
+#define BOOST_DISABLED_ON_OEM									2 // E02
+#define BOOST_ENABLED_ON_OEM									3 // E03
+#else
 #define BOOST_DISABLED_ON_OEM									1 // E01
 #define BOOST_ENABLED_ON_OEM									5 // E05
+#endif
+#define EMTB_FUNCTION_ENABLED									16
+#define EMTB_FUNCTION_DISABLED								17
+#if ENABLE_XH18_COMPATIBILITY
+#define EMTB_DISABLED_ON_OEM									2 // E02
+#define EMTB_ENABLED_ON_OEM										3 // E03
+#else
+#define EMTB_DISABLED_ON_OEM									1 // E01
+#define EMTB_ENABLED_ON_OEM										2 // E02
+#endif
+
+//=================================================================================================
+// SYSTEM ERRORS
+//=================================================================================================
+#define NO_ERROR                                		0
+#define ERROR_MOTOR_BLOCKED													1
+#define ERROR_TORQUE_APPLIED_DURING_POWER_ON				2
+#define ERROR_BRAKE_APPLIED_DURING_POWER_ON					3
+#define ERROR_THROTTLE_APPLIED_DURING_POWER_ON			4
+#define ERROR_NO_SPEED_SENSOR_DETECTED							5
+
+//=================================================================================================
+// CHECK SYSTEM
+//=================================================================================================
+#define MOTOR_BLOCKED_COUNTER_THRESHOLD             50		// 50  =>  5 seconds
+#define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5	8			// 8  =>  (8 * 0.826) / 5 = 1.3216 ampere  =>  (X) units = ((X * 0.826) / 5) ampere
+#define MOTOR_BLOCKED_ERPS_THRESHOLD                10		// 10 ERPS
+#define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD       100		// 100  =>  10 seconds
+
+//=================================================================================================
+// UART
+//=================================================================================================
+#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   	6
+#define UART_NUMBER_DATA_BYTES_TO_SEND				8
 
 //=================================================================================================
 // EBIKE APP STATE MOTOR
@@ -114,7 +199,8 @@
 #define LIGHTS_ACTIVATED																		0	// lights activated (CONFIG_0 bit0)
 #define WALK_ASSIST_ACTIVATED																0	// walk assist activated (CONFIG_0 bit1)
 #define OFFROAD_MODE_ACTIVATED															0	// offroad mode activated (CONFIG_0 bit2)
-#define CONFIG_0																						(uint8_t) ((LIGHTS_ACTIVATED)|(WALK_ASSIST_ACTIVATED << 1)|(OFFROAD_MODE_ACTIVATED << 2))
+#define EMTB_MODE_ACTIVATED																	0	// emtb mode activated (CONFIG_0 bit3)
+#define CONFIG_0																						(uint8_t) ((LIGHTS_ACTIVATED)|(WALK_ASSIST_ACTIVATED << 1)|(OFFROAD_MODE_ACTIVATED << 2)|(EMTB_MODE_ACTIVATED << 3)|(ENABLE_EMTB_MODE_ON_STARTUP << 4))
 
 #if MOTOR_TYPE_36V
 #define MOTOR_TYPE	1
@@ -164,7 +250,7 @@
 // ADC Battery SOC voltage per ADC step (x10000)
 #define SOC_ADC_BATTERY_VOLTAGE_PER_ADC_STEP_X10000 				(uint16_t) (SOC_ADC_BATTERY_VOLTAGE_PER_ADC_STEP * 10000)	// Samsung INR18650-25R cells
 
-#if ENABLE_VLCD6_COMPATIBILITY
+#if ENABLE_VLCD6_COMPATIBILITY || ENABLE_XH18_COMPATIBILITY
 #define LI_ION_CELL_VOLTS_5																	(float)LI_ION_CELL_OVERVOLT
 #define LI_ION_CELL_VOLTS_4																	(float)LI_ION_CELL_VOLTS_100
 #define LI_ION_CELL_VOLTS_3																	(float)LI_ION_CELL_VOLTS_75
@@ -193,6 +279,15 @@
 #define OEM_WHEEL_SPEED_DIVISOR_1														(uint8_t) ((OEM_WHEEL_SPEED_DIVISOR >> 8) & 0x00FF)
 
 //=================================================================================================
+// ASSIST PEDAL LEVELS
+//=================================================================================================
+#define ECO																									0
+#define TOUR																								1
+#define SPORT																								2
+#define EMTB																								2
+#define TURBO																								3
+
+//=================================================================================================
 // ASSIST PEDAL LEVELS INDEX
 //=================================================================================================
 #define ASSIST_PEDAL_LEVEL0																	0x10
@@ -200,6 +295,11 @@
 #define ASSIST_PEDAL_LEVEL2																	0x02
 #define ASSIST_PEDAL_LEVEL3																	0x04
 #define ASSIST_PEDAL_LEVEL4																	0x08
+
+//=================================================================================================
+// SOFT START RAMP
+//=================================================================================================
+#define THRESHOLD_SOFT_START_PAS_CADENCE										(uint8_t) 10
 
 //=================================================================================================
 // ASSIST LEVELS CONFIG
@@ -303,14 +403,25 @@
 #define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (6250 / PAS_NUMBER_MAGNETS)	// max hard limit to 150RPM PAS cadence
 #define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (93750 / PAS_NUMBER_MAGNETS)	// min hard limit to 10RPM PAS cadence
 #define PAS_NUMBER_MAGNETS_X2 															(uint8_t) (PAS_NUMBER_MAGNETS * 2)
+#define THRESHOLD_PAS_BACKWARDS_CADENCE_RPM									(uint8_t) 40
 
 //=================================================================================================
 // TORQUE SENSOR
 //=================================================================================================
 // Pedal torque sensor X100
 #define PEDAL_TORQUE_X100																		(uint16_t) (PEDAL_TORQUE_SENSOR_UNIT * 100)
-#define PEDAL_POWER_DIVISOR																	(uint16_t) (105 / AVERAGE_TORQUE_FACTOR)
+#define TORQUE_SENSOR_THRESHOLD_HI													(uint8_t) 12
+#define TORQUE_SENSOR_THRESHOLD_LOW													(uint8_t) 12
 
+#if ENABLE_LAST_BETA_RELEASE
+	#if ENABLE_LAST_PEDAL_POWER_DIVISOR
+	#define PEDAL_POWER_DIVISOR																(uint32_t) (95.5 / AVERAGE_TORQUE_FACTOR)
+	#else
+	#define PEDAL_POWER_DIVISOR																(uint32_t) (105 / AVERAGE_TORQUE_FACTOR)
+	#endif
+#else
+#define PEDAL_POWER_DIVISOR																	(uint32_t) (105 / AVERAGE_TORQUE_FACTOR)
+#endif
 //=================================================================================================
 // LIGHTS TIMING
 //=================================================================================================

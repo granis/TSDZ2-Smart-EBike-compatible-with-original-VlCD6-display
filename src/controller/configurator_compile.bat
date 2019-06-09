@@ -14,4 +14,4 @@ goto EXIT
 pause
 :EXIT
 exit
-pause
+::pause

@@ -60,6 +60,9 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 extern volatile struct_configuration_variables configuration_variables;
 #endif
 
+//=================================================================================================
+//
+//=================================================================================================
 int main(void)
 {
   uint16_t ui16_TIM3_counter = 0;
@@ -150,6 +153,5 @@ int main(void)
 		}
 		#endif
   }
-  //return 0;
 }
 

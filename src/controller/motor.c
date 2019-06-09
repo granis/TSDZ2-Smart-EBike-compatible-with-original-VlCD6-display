@@ -430,6 +430,9 @@ void calc_foc_angle(void);
 uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
 void motor_set_phase_current_max(uint8_t ui8_value);
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_controller(void)
 {
   // reads battery voltage and current
@@ -444,9 +447,10 @@ void motor_controller(void)
 // Hall sensor A positivie to negative transition | BEMF phase B at max value / top of sinewave
 // Hall sensor B positivie to negative transition | BEMF phase A at max value / top of sinewave
 // Hall sensor C positive to negative transition | BEMF phase C at max value / top of sinewave
-
-// runs every 64us (PWM frequency)
-void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
+//=================================================================================================
+//
+//=================================================================================================
+void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) // runs every 64us (PWM frequency)
 {
   static uint8_t ui8_temp;
   struct_configuration_variables *p_configuration_variables;
@@ -626,9 +630,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 	#if ENABLE_LAST_BETA_RELEASE || ENABLE_LAST_MOTOR_DUTY_CYCLE_CODE
   // do not execute all, otherwise ui8_duty_cycle would be decremented more than onece on each PWM cycle
   // do not control current at every PWM cycle, that will measure and control too fast. Use counter to limit 
-  ui8_current_controller_counter++;
-
-  if(ui8_current_controller_counter > 12)
+  if(++ui8_current_controller_counter > 12)
   {
     // reset counter
     ui8_current_controller_counter = 0;
@@ -685,8 +687,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   }	
 	#else
   // control current only at every some PWM cycles, otherwise will be to fast, maybe because of low pass filter on hardware about reading the current
-  ui8_current_controller_counter++;
-  if(ui8_current_controller_counter > 12)
+  if(++ui8_current_controller_counter > 12)
   {
     ui8_current_controller_counter = 0;
     if((ui8_adc_battery_current > ui8_controller_adc_battery_max_current)|| // battery max current, reduce duty_cycle
@@ -870,6 +871,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         else
         {
           ui16_pas_pwm_cycles_ticks = ui16_pas_counter;
+          ui16_pas_counter = 0;
         }
 
         // see the direction
@@ -899,8 +901,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         }
       }
     }
-
-    ui16_pas_counter = 0;
 
 		#if 0
 		// NOTE: we are not using the next block of code to calculate the max torque signal one pedal rotation
@@ -1071,31 +1071,49 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
   /****************************************************************************/
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_disable_PWM(void)
 {
   TIM1_CtrlPWMOutputs(DISABLE);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_enable_PWM(void)
 {
   TIM1_CtrlPWMOutputs(ENABLE);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_controller_set_state(uint8_t ui8_state)
 {
   ui8_motor_controller_state |= ui8_state;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_controller_reset_state(uint8_t ui8_state)
 {
   ui8_motor_controller_state &= ~ui8_state;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint8_t motor_controller_state_is_set(uint8_t ui8_state)
 {
   return ui8_motor_controller_state & ui8_state;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void hall_sensor_init(void)
 {
   GPIO_Init (HALL_SENSOR_A__PORT, (GPIO_Pin_TypeDef) HALL_SENSOR_A__PIN, GPIO_MODE_IN_FL_NO_IT);
@@ -1103,6 +1121,9 @@ void hall_sensor_init(void)
   GPIO_Init (HALL_SENSOR_C__PORT, (GPIO_Pin_TypeDef) HALL_SENSOR_C__PIN, GPIO_MODE_IN_FL_NO_IT);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_init(void)
 {
   motor_set_pwm_duty_cycle_ramp_up_inverse_step(PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP); // each step = 64us
@@ -1110,6 +1131,9 @@ void motor_init(void)
   motor_set_phase_current_max(ADC_MOTOR_PHASE_CURRENT_MAX);
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_set_pwm_duty_cycle_target(uint8_t ui8_value)
 {
   if(ui8_value > PWM_DUTY_CYCLE_MAX) { ui8_value = PWM_DUTY_CYCLE_MAX; }
@@ -1120,26 +1144,41 @@ void motor_set_pwm_duty_cycle_target(uint8_t ui8_value)
   ui8_duty_cycle_target = ui8_value;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_set_pwm_duty_cycle_ramp_up_inverse_step(uint16_t ui16_value)
 {
   ui16_duty_cycle_ramp_up_inverse_step = ui16_value;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_set_pwm_duty_cycle_ramp_down_inverse_step(uint16_t ui16_value)
 {
   ui16_duty_cycle_ramp_down_inverse_step = ui16_value;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_set_phase_current_max(uint8_t ui8_value)
 {
   ui8_adc_target_motor_phase_max_current = ui8_adc_motor_phase_current_offset + ui8_value;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint16_t ui16_motor_get_motor_speed_erps(void)
 {
   return ui16_motor_speed_erps;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void read_battery_voltage(void)
 {
 	// low pass filter the voltage readed value, to avoid possible fast spikes/noise
@@ -1148,6 +1187,9 @@ void read_battery_voltage(void)
   ui16_adc_battery_voltage_filtered_10b = ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void read_battery_current(void)
 {
   // low pass filter the positive battery readed value (no regen current), to avoid possible fast spikes/noise
@@ -1156,6 +1198,9 @@ void read_battery_current(void)
   ui8_adc_battery_current_filtered_10b = ui16_adc_battery_current_accumulated >> READ_BATTERY_CURRENT_FILTER_COEFFICIENT;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void calc_foc_angle(void)
 {
   uint16_t ui16_temp;
@@ -1289,8 +1334,10 @@ void calc_foc_angle(void)
   ui8_foc_angle = ui16_foc_angle_accumulated >> 4;
 }
 
-// calc asin also converts the final result to degrees
-uint8_t asin_table(uint8_t ui8_inverted_angle_x128)
+//=================================================================================================
+//
+//=================================================================================================
+uint8_t asin_table(uint8_t ui8_inverted_angle_x128) // calc asin also converts the final result to degrees
 {
   uint8_t ui8_index = 0;
 
@@ -1308,16 +1355,25 @@ uint8_t asin_table(uint8_t ui8_inverted_angle_x128)
   return ui8_index--;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint8_t motor_get_adc_battery_current_filtered_10b(void)
 {
   return ui8_adc_battery_current_filtered_10b;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 uint16_t motor_get_adc_battery_voltage_filtered_10b(void)
 {
   return ui16_adc_battery_voltage_filtered_10b;
 }
 
+//=================================================================================================
+//
+//=================================================================================================
 void motor_set_adc_battery_voltage_cut_off(uint8_t ui8_value)
 {
   ui8_adc_battery_voltage_cut_off = ui8_value;
