@@ -37,33 +37,11 @@
 //---------------------------------------------------------
 #define ENABLE_ASSIST_LEVEL_EMTB							1
 //---------------------------------------------------------
-#define ENABLE_LAST_ADC_CODE									1
-//---------------------------------------------------------
-#define ENABLE_LAST_MOTOR_DUTY_CYCLE_CODE			0
-#define ENABLE_LAST_MOTOR_PAS_PWM_CYCLES_CODE	0
-#define ENABLE_LAST_MOTOR_SPEED_ERPS_CODE			0
-//---------------------------------------------------------
-#define ENABLE_LAST_APP_BATTERY_TARGET_CODE		0
-#define ENABLE_LAST_APP_PWM_DUTY_CYCLE_CODE		0
-#define ENABLE_LAST_APP_BOOST_CODE						0
-#define ENABLE_LAST_APP_PAS_CADENCE_RPM_CODE	0
-#define ENABLE_LAST_APP_PEDALLING_CODE				0
-//---------------------------------------------------------
 #define CLR_SOFT_START_WHEN_CADENCE_RPM_ZERO	1
 #if CLR_SOFT_START_WHEN_CADENCE_RPM_ZERO
 #define CLR_SOFT_START_WHEN_SPEED_ZERO				0
 #else
 #define CLR_SOFT_START_WHEN_SPEED_ZERO				1
-#endif
-//---------------------------------------------------------
-#define ENABLE_CHECK_SYSTEM_CODE							1
-#if ENABLE_CHECK_SYSTEM_CODE
-#define ENABLE_SAFE_TESTS_CODE								0
-#else
-#define ENABLE_SAFE_TESTS_CODE								1
-#endif
-#if ENABLE_SAFE_TESTS_CODE
-#define ENABLE_LAST_APP_SAFE_TESTS_CODE				0
 #endif
 //---------------------------------------------------------
 #define ENABLE_LOW_PASS_SOFT_START_RAMP				0
@@ -73,6 +51,7 @@
 #define ENABLE_LINEAR_SOFT_START_RAMP					1
 #endif
 //---------------------------------------------------------
+#define ENABLE_BETA_CALC_HUMAN_FORCE					0
 #define ENABLE_LAST_PEDAL_POWER_DIVISOR				1
 //---------------------------------------------------------
 #define ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM	0
@@ -156,7 +135,7 @@ VLCD6 Faults List:
 //=================================================================================================
 // CHECK SYSTEM
 //=================================================================================================
-#define MOTOR_BLOCKED_COUNTER_THRESHOLD             50		// 50  =>  5 seconds
+#define MOTOR_BLOCKED_COUNTER_THRESHOLD             30		// 30  =>  3 seconds
 #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X5	8			// 8  =>  (8 * 0.826) / 5 = 1.3216 ampere  =>  (X) units = ((X * 0.826) / 5) ampere
 #define MOTOR_BLOCKED_ERPS_THRESHOLD                10		// 10 ERPS
 #define MOTOR_BLOCKED_RESET_COUNTER_THRESHOLD       100		// 100  =>  10 seconds
@@ -260,6 +239,14 @@ VLCD6 Faults List:
 #endif
 
 #if ENABLE_VLCD5_COMPATIBILITY
+#if ENABLE_VLCD5_BATTERY_SOC_4_BARS
+#define LI_ION_CELL_VOLTS_5																	(float)LI_ION_CELL_OVERVOLT
+#define LI_ION_CELL_VOLTS_4																	(float)LI_ION_CELL_VOLTS_100
+#define LI_ION_CELL_VOLTS_3																	(float)LI_ION_CELL_VOLTS_75
+#define LI_ION_CELL_VOLTS_2																	(float)LI_ION_CELL_VOLTS_50
+#define LI_ION_CELL_VOLTS_1																	(float)LI_ION_CELL_VOLTS_25
+#define LI_ION_CELL_VOLTS_0																	(float)LI_ION_CELL_EMPTY
+#else
 #define LI_ION_CELL_VOLTS_7																	(float)LI_ION_CELL_OVERVOLT
 #define LI_ION_CELL_VOLTS_6																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 6) + LI_ION_CELL_EMPTY)
 #define LI_ION_CELL_VOLTS_5																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 5) + LI_ION_CELL_EMPTY)
@@ -268,6 +255,7 @@ VLCD6 Faults List:
 #define LI_ION_CELL_VOLTS_2																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 2) + LI_ION_CELL_EMPTY)
 #define LI_ION_CELL_VOLTS_1																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 1) + LI_ION_CELL_EMPTY)
 #define LI_ION_CELL_VOLTS_0																	(float)LI_ION_CELL_EMPTY
+#endif
 #endif
 
 //=================================================================================================
@@ -284,8 +272,8 @@ VLCD6 Faults List:
 #define ECO																									0
 #define TOUR																								1
 #define SPORT																								2
-#define EMTB																								2
 #define TURBO																								3
+#define EMTB																								4
 
 //=================================================================================================
 // ASSIST PEDAL LEVELS INDEX
@@ -299,7 +287,15 @@ VLCD6 Faults List:
 //=================================================================================================
 // SOFT START RAMP
 //=================================================================================================
-#define THRESHOLD_SOFT_START_PAS_CADENCE										(uint8_t) 10
+#define THRESHOLD_SOFT_START_PAS_CADENCE										(uint8_t) 1
+#define INITIAL_SOFT_START_ASSIST_VALUE											(uint8_t) (INITIAL_SOFT_START_ASSIST_VALUE_X10 / 10)
+
+//=================================================================================================
+// EMTB MODE
+//=================================================================================================
+#define EMTB_MIN_CADENCE																		(uint8_t) 80
+#define EMTB_MAX_CADENCE																		(uint8_t) 200
+#define EMTB_START_ASSIST_LEVEL_FACTOR											(uint8_t) (EMTB_START_ASSIST_LEVEL_FACTOR_X10 / 10)
 
 //=================================================================================================
 // ASSIST LEVELS CONFIG
@@ -400,25 +396,27 @@ VLCD6 Faults List:
 //=================================================================================================
 // x = (1/(150RPM/60)) / (0.000064)
 // PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS = (x / PAS_NUMBER_MAGNETS)
-#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (6250 / PAS_NUMBER_MAGNETS)	// max hard limit to 150RPM PAS cadence
-#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (93750 / PAS_NUMBER_MAGNETS)	// min hard limit to 10RPM PAS cadence
+#define PAS_ABSOLUTE_MAX_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (6250 / PAS_NUMBER_MAGNETS)	// max hard limit to 150 RPM PAS cadence
+#define MIN_PAS_CADENCE_RPM																	5
+#if(MIN_PAS_CADENCE_RPM == 10)
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (93750 / PAS_NUMBER_MAGNETS)	// min hard limit to 10 RPM PAS cadence
+#elif(MIN_PAS_CADENCE_RPM == 5)
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (187500 / PAS_NUMBER_MAGNETS)	// min hard limit to 5 RPM PAS cadence
+#else
+#define PAS_ABSOLUTE_MIN_CADENCE_PWM_CYCLE_TICKS  					(uint16_t) (375000 / PAS_NUMBER_MAGNETS)	// min hard limit to 2.5 RPM PAS cadence
+#endif
 #define PAS_NUMBER_MAGNETS_X2 															(uint8_t) (PAS_NUMBER_MAGNETS * 2)
 #define THRESHOLD_PAS_BACKWARDS_CADENCE_RPM									(uint8_t) 40
 
 //=================================================================================================
 // TORQUE SENSOR
 //=================================================================================================
-// Pedal torque sensor X100
-#define PEDAL_TORQUE_X100																		(uint16_t) (PEDAL_TORQUE_SENSOR_UNIT * 100)
+#define ADC_STEP_PEDAL_TORQUE_X100                         	(uint16_t) (PEDAL_TORQUE_SENSOR_UNIT * 100)
 #define TORQUE_SENSOR_THRESHOLD_HI													(uint8_t) 12
 #define TORQUE_SENSOR_THRESHOLD_LOW													(uint8_t) 12
 
-#if ENABLE_LAST_BETA_RELEASE
-	#if ENABLE_LAST_PEDAL_POWER_DIVISOR
-	#define PEDAL_POWER_DIVISOR																(uint32_t) (95.5 / AVERAGE_TORQUE_FACTOR)
-	#else
-	#define PEDAL_POWER_DIVISOR																(uint32_t) (105 / AVERAGE_TORQUE_FACTOR)
-	#endif
+#if ENABLE_LAST_PEDAL_POWER_DIVISOR
+#define PEDAL_POWER_DIVISOR																	(uint32_t) (96 / AVERAGE_TORQUE_FACTOR)
 #else
 #define PEDAL_POWER_DIVISOR																	(uint32_t) (105 / AVERAGE_TORQUE_FACTOR)
 #endif

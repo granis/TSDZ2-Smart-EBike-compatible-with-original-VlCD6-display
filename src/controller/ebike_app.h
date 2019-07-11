@@ -52,7 +52,7 @@ typedef struct _configuration_variables
 	uint8_t ui8_battery_cells_number;
 	uint16_t ui16_battery_pack_resistance_x1000;
 	uint16_t ui16_oem_wheel_speed_factor;
-	uint8_t ui8_assist_level_power[4];
+	uint8_t ui8_assist_level_power[5];
 	uint8_t ui8_startup_motor_power_boost[4];
 	uint8_t ui8_walk_assist_percentage_current;
 	uint8_t ui8_walk_assist_pwm_duty_cycle;
@@ -68,15 +68,12 @@ extern volatile uint8_t ui8_adc_torque_sensor_max_value;
 extern volatile uint8_t ui8_adc_battery_current_offset;
 extern volatile uint8_t ui8_ebike_app_state;
 extern volatile uint8_t ui8_adc_target_battery_max_current;
-
 extern volatile uint16_t ui16_pas_pwm_cycles_ticks;
 extern volatile uint8_t ui8_pas_direction;
 extern volatile uint8_t ui8_pedaling_direction;
-extern uint8_t ui8_pas_cadence_rpm;
-
+extern volatile uint8_t ui8_pas_cadence_rpm;
 extern volatile uint16_t ui16_wheel_speed_sensor_pwm_cycles_ticks;
 extern volatile uint8_t ui8_wheel_speed_sensor_is_disconnected;
-
 extern volatile uint32_t ui32_wheel_speed_sensor_tick_counter;
 
 void ebike_app_init(void);

@@ -50,11 +50,7 @@ void adc_init(void)
   // next code is for "calibrating" the offset value of some ADC channels
 
   // read and discard few samples of ADC, to make sure the next samples are ok
-	#if ENABLE_LAST_BETA_RELEASE || ENABLE_LAST_ADC_CODE
   for(ui8_i = 0; ui8_i < 64; ++ui8_i)
-	#else
-	for(ui8_i = 0; ui8_i <= 64; ui8_i++)
-	#endif
   {
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
     while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
@@ -64,11 +60,7 @@ void adc_init(void)
 
   // read and average a few values of ADC battery current
   ui16_adc_battery_current_offset = 0;
-	#if ENABLE_LAST_BETA_RELEASE || ENABLE_LAST_ADC_CODE
   for(ui8_i = 0; ui8_i < 16; ++ui8_i)
-	#else
-	for(ui8_i = 0; ui8_i <= 16; ui8_i++)
-	#endif
   {
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
     while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms
@@ -82,11 +74,7 @@ void adc_init(void)
 
   // read and average a few values of ADC torque sensor
   ui16_adc_torque_sensor_offset = 0;
-	#if ENABLE_LAST_BETA_RELEASE || ENABLE_LAST_ADC_CODE
   for(ui8_i = 0; ui8_i < 16; ++ui8_i)
-	#else
-	for(ui8_i = 0; ui8_i <= 16; ui8_i++)
-	#endif
   {
     ui16_counter = TIM3_GetCounter() + 10; // delay ~10ms
     while(TIM3_GetCounter() < ui16_counter) ; // delay ~10ms

@@ -71,35 +71,68 @@ int main(void)
   uint16_t ui16_debug_uart_counter = 0;
   uint16_t ui16_temp = 0;
   uint16_t ui16_throttle_value_filtered = 0;
-  uint32_t ui32_delay;
+  uint32_t ui32_delay = 0;
 
   //set clock at the max 16MHz
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
 
-  // startup wait...
-  for(ui32_delay=0; ui32_delay<100000; ui32_delay++);
+  // startup wait (1000ms)...
+  for(ui32_delay=0; ui32_delay<1000000; ui32_delay++);
 
+  // initialize brake
   brake_init();
+
 	#if ENABLE_DEBUG_FIRMWARE
   buttons_init();
   leds_init();
 	#endif
 	#if ENABLE_BRAKE_SENSOR
-  while(brake_is_set()) ; // hold here while brake is pressed -- this is a protection for development
+  while(brake_is_set()); // hold here while brake is pressed -- this is a protection for development
 	#endif
+
+  // initialize EEPROM
   eeprom_init();
+	
+	// init variables with the stored value on EEPROM
+  eeprom_init_variables();	
+
+  // initialize lights
   lights_init();
+
+  // initialize uart2
   uart2_init();
+
+  // initialize timer2
   timer2_init();
+
+  // initialize timer3
   timer3_init();
+
+  // initialize adc
   adc_init();
+
+  // initialize torque sensor
   torque_sensor_init();
+
+  // initialize pas
   pas_init();
+
+  // initialize wheel speed sensor
   wheel_speed_sensor_init();
+
+  // initialize hall sensor
   hall_sensor_init();
+
+  // initialize pwm
   pwm_init_bipolar_4q();
+
+  // initialize motor
   motor_init();
+
+  // initialize ebike application
   ebike_app_init();
+
+  // initialize interrupts
   enableInterrupts();
 
 	// main loop
