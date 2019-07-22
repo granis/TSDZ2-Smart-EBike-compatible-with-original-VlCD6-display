@@ -79,22 +79,23 @@ int main(void)
   // startup wait (1000ms)...
   for(ui32_delay=0; ui32_delay<1000000; ui32_delay++);
 
-  // initialize brake
-  brake_init();
-
 	#if ENABLE_DEBUG_FIRMWARE
-  buttons_init();
-  leds_init();
-	#endif
-	#if ENABLE_BRAKE_SENSOR
-  while(brake_is_set()); // hold here while brake is pressed -- this is a protection for development
+	buttons_init();
+	leds_init();
 	#endif
 
   // initialize EEPROM
   eeprom_init();
-	
+
 	// init variables with the stored value on EEPROM
-  eeprom_init_variables();	
+  eeprom_init_variables();
+
+  // initialize brake
+  brake_init();
+
+	#if ENABLE_BRAKE_SENSOR
+  while(brake_is_set()); // hold here while brake is pressed -- this is a protection for development
+	#endif
 
   // initialize lights
   lights_init();

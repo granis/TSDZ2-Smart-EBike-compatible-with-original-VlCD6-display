@@ -248,12 +248,12 @@ VLCD6 Faults List:
 #define LI_ION_CELL_VOLTS_0																	(float)LI_ION_CELL_EMPTY
 #else
 #define LI_ION_CELL_VOLTS_7																	(float)LI_ION_CELL_OVERVOLT
-#define LI_ION_CELL_VOLTS_6																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 6) + LI_ION_CELL_EMPTY)
-#define LI_ION_CELL_VOLTS_5																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 5) + LI_ION_CELL_EMPTY)
-#define LI_ION_CELL_VOLTS_4																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 4) + LI_ION_CELL_EMPTY)
-#define LI_ION_CELL_VOLTS_3																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 3) + LI_ION_CELL_EMPTY)
-#define LI_ION_CELL_VOLTS_2																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 2) + LI_ION_CELL_EMPTY)
-#define LI_ION_CELL_VOLTS_1																	(float)((((LI_ION_CELL_OVERVOLT - LI_ION_CELL_EMPTY) / 7) * 1) + LI_ION_CELL_EMPTY)
+#define LI_ION_CELL_VOLTS_6																	(float)LI_ION_CELL_VOLTS_100
+#define LI_ION_CELL_VOLTS_5																	(float)((((LI_ION_CELL_VOLTS_100 - LI_ION_CELL_VOLTS_25) / 5) * 4) + LI_ION_CELL_VOLTS_25)
+#define LI_ION_CELL_VOLTS_4																	(float)((((LI_ION_CELL_VOLTS_100 - LI_ION_CELL_VOLTS_25) / 5) * 3) + LI_ION_CELL_VOLTS_25)
+#define LI_ION_CELL_VOLTS_3																	(float)((((LI_ION_CELL_VOLTS_100 - LI_ION_CELL_VOLTS_25) / 5) * 2) + LI_ION_CELL_VOLTS_25)
+#define LI_ION_CELL_VOLTS_2																	(float)((((LI_ION_CELL_VOLTS_100 - LI_ION_CELL_VOLTS_25) / 5) * 1) + LI_ION_CELL_VOLTS_25)
+#define LI_ION_CELL_VOLTS_1																	(float)LI_ION_CELL_VOLTS_25
 #define LI_ION_CELL_VOLTS_0																	(float)LI_ION_CELL_EMPTY
 #endif
 #endif

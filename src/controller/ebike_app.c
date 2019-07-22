@@ -646,19 +646,15 @@ static void ebike_control_motor(void)
 	   (ui16_motor_get_motor_speed_erps() == 0)&&
      (ui8_adc_battery_target_current))
   {
-    {
-      ui8_motor_enabled = 1;
-      ui8_duty_cycle = 0;
-      enable_pwm();
-    }
+		ui8_motor_enabled = 1;
+		ui8_duty_cycle = 0;
+		enable_pwm();
   }
 
   // check to see if we should disable the motor
   if((ui8_motor_enabled)&&
      (ui16_motor_get_motor_speed_erps() == 0)&&
      (ui8_adc_battery_target_current == 0)&&
-		 (ui8_torque_sensor_raw == 0)&&
-		 (ui8_pas_cadence_rpm == 0)&&
      (ui8_duty_cycle == 0))
   {
     ui8_motor_enabled = 0;
@@ -675,7 +671,10 @@ static void ebike_control_motor(void)
   {
   	ebike_app_set_target_adc_battery_max_current(0);
   	ui8_duty_cycle = 0;
-  }	
+  }
+	#else
+  // finally set the target battery current to the battery current controller
+  ebike_app_set_target_adc_battery_max_current(ui8_adc_battery_target_current);
 	#endif
 	
 	#if ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM
@@ -728,16 +727,38 @@ static void ebike_control_motor(void)
    	#if ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM
 			if(ui8_pas_cadence_rpm == 0)
 			{
+				// stop motor pwm duty cycle
 				motor_set_pwm_duty_cycle_target(0);
 
+				// clear startup pedal
+				ui8_startup_pedal = 0;
+
+				// clear startup throttle
+				ui8_startup_throttle = 0;
+
+				// clear startup walk
+				ui8_startup_walk = 0;
+
+				// clear walk assist variables
 				ui8_walk_assist_flag = 0;
 				ui8_walk_assist_start = 0;
 				ui8_walk_assist_delay_off_flag = 0;
 				ui8_walk_assist_current_per_cent = 0;
 			}				
 		#else
+			// stop motor pwm duty cycle
 			motor_set_pwm_duty_cycle_target(0);
 
+			// clear startup pedal
+			ui8_startup_pedal = 0;
+
+			// clear startup throttle
+			ui8_startup_throttle = 0;
+
+			// clear startup walk
+			ui8_startup_walk = 0;
+
+			// clear walk assist variables
 			ui8_walk_assist_flag = 0;
 			ui8_walk_assist_start = 0;
 			ui8_walk_assist_delay_off_flag = 0;
