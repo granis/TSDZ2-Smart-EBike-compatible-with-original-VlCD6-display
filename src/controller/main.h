@@ -143,8 +143,12 @@ VLCD6 Faults List:
 //=================================================================================================
 // UART
 //=================================================================================================
-#define UART_NUMBER_DATA_BYTES_TO_RECEIVE   	6
-#define UART_NUMBER_DATA_BYTES_TO_SEND				8
+#define UART_RX_BUFFER_LEN   									7
+#define RX_CHECK_CODE													(UART_RX_BUFFER_LEN - 1)															
+#define UART_TX_BUFFER_LEN										9
+#define TX_CHECK_CODE													(UART_TX_BUFFER_LEN - 1)
+#define TX_STX																0x43
+#define RX_STX																0x59															
 
 //=================================================================================================
 // EBIKE APP STATE MOTOR

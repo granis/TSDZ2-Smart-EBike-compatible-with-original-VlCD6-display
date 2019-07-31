@@ -61,9 +61,9 @@ volatile uint32_t ui32_wheel_speed_sensor_tick_counter = 0;
 volatile float f_oem_wheel_speed = 0;
 volatile uint16_t ui16_oem_wheel_speed = 0;
 volatile uint8_t ui8_received_package_flag = 0;
-volatile uint8_t ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE+1];
+volatile uint8_t ui8_rx_buffer[UART_RX_BUFFER_LEN];
 volatile uint8_t ui8_rx_counter = 0;
-volatile uint8_t ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND+1];
+volatile uint8_t ui8_tx_buffer[UART_TX_BUFFER_LEN];
 volatile uint8_t ui8_tx_counter = 0;
 volatile uint8_t ui8_byte_received = 0;
 volatile uint8_t ui8_state_machine = 0;
@@ -97,9 +97,6 @@ volatile uint8_t ui8_lights_flag = 0;
 volatile uint8_t ui8_mode_flag = 0;
 volatile uint8_t ui8_boost_flag = 0;
 volatile uint8_t ui8_emtb_flag = 0;
-volatile uint8_t ui8_startup_pedal = 0;
-volatile uint8_t ui8_startup_throttle = 0;
-volatile uint8_t ui8_startup_walk = 0;
 #if ENABLE_DEBUG_FIRMWARE
 uint8_t led1_status = 0;
 uint8_t led2_status = 0;
@@ -125,13 +122,13 @@ static void apply_speed_limit(uint16_t ui16_speed_x10, uint8_t ui8_max_speed, ui
 static void apply_temperature_limiting(uint8_t *ui8_target_current);
 static void check_battery_soc(void);
 static void walk_assist_read(void);
-static void apply_walk_assist(uint8_t ui8_walk_assist_value, uint8_t *ui8_startup, uint8_t *ui8_target_current);
+static void apply_walk_assist(uint8_t ui8_walk_assist_value, uint8_t *ui8_target_current);
 static void boost_run_statemachine(void);
 static uint8_t apply_boost(uint8_t ui8_pas_cadence, uint8_t ui8_max_current_boost_state, uint8_t *ui8_target_current);
 static void apply_boost_fade_out(uint8_t *ui8_target_current);
 static void check_system(void);
 #if ENABLE_THROTTLE
-static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_startup, uint8_t *ui8_target_current);
+static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_target_current);
 #endif
 #if ENABLE_DEBUG_FIRMWARE
 static void debug_firmware(void);
@@ -319,9 +316,13 @@ static void ebike_control_motor(void)
   ui8_brake_is_set = 0;
 	#endif
 
-  // make sure this vars are reset to avoid repetion code on next elses
+  // clear max_battery current boost state
   ui8_adc_max_battery_current_boost_state = 0;
+
+  // clear battery target current
   ui8_adc_battery_target_current = 0;
+
+  // clear max battery power current
   ui8_adc_max_battery_power_current = 0;
 
 	// controller works with no less than 15V so calculate the target current only for higher voltages
@@ -533,16 +534,6 @@ static void ebike_control_motor(void)
   {
     // nothing
   }
-
-  // Can activate pedal assist when we press the pedals and walk assist is disabled and throttle is disabled
-  if((!ui8_walk_assist_flag)&&(!ui8_startup_throttle))
-  {
-  	ui8_startup_pedal = (configuration_variables.ui8_assist_level_factor_x10 && ui8_torque_sensor) ? 1 : 0;
-  }
-  else
-  {
-  	ui8_startup_pedal = 0;
-  }
 	
 	// get pas cadence rpm
   ui8_tmp_pas_cadence_rpm = ui8_pas_cadence_rpm;
@@ -562,27 +553,16 @@ static void ebike_control_motor(void)
   }
 
 	#if ENABLE_THROTTLE
-  // Can activate throttle when walk assist is disabled and pedal assist is disabled
-  if((!ui8_walk_assist_flag)&&(!ui8_startup_pedal))
-  {
-  	apply_throttle(ui8_throttle, &ui8_startup_throttle, &ui8_adc_battery_target_current);
-  }
-  else
-  {
-  	ui8_startup_throttle = 0;
-  }
+  // Activate throttle when throttle value greater than 0
+  apply_throttle(ui8_throttle, &ui8_adc_battery_target_current);
 	#endif
 	
-	// Can activate walk assist when startup throttle is disabled and startup pedal is disabled
-	if((ui8_walk_assist_flag)&&(!ui8_startup_throttle)&&(!ui8_startup_pedal))
+	// Activate walk assist
+	if(ui8_walk_assist_flag)
 	{
 		ui8_adc_battery_target_current = (ui8_adc_battery_current_max	* ui8_walk_assist_current_per_cent) / 100;
-		apply_walk_assist(ui8_walk_assist, &ui8_startup_walk, &ui8_adc_battery_target_current);
+		apply_walk_assist(ui8_walk_assist, &ui8_adc_battery_target_current);
 	}
-  else
-  {
-  	ui8_startup_walk = 0;
-  }
 
 	// get max wheel speed from eeprom
   ui8_tmp_max_speed = configuration_variables.ui8_wheel_max_speed;
@@ -677,17 +657,8 @@ static void ebike_control_motor(void)
   ebike_app_set_target_adc_battery_max_current(ui8_adc_battery_target_current);
 	#endif
 	
-	#if ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM
-	// we must have:
-	if((((ui8_startup_pedal)&&(ui8_pas_cadence_rpm > 0))|| // pedal assit enabled and pad cadence rpm > 0
-	   (ui8_startup_walk)|| // or walk assit enabled
-		 (ui8_startup_throttle))&& // or throttle enabled
-		 (ui8_adc_battery_target_current)&& // and target positive current
-		 (!ui8_brake_is_set)) // and brakes must not be pressed
-	#else
 	// we must have a target positive current and brakes must not be pressed
 	if((ui8_adc_battery_target_current)&&(!ui8_brake_is_set))
-	#endif
   {
 		// walk assist active?
 		if(ui8_walk_assist_flag)
@@ -724,46 +695,14 @@ static void ebike_control_motor(void)
 	}		
   else
   {
-   	#if ENABLE_PWM_ZERO_WHEN_ZERO_CADENCE_RPM
-			if(ui8_pas_cadence_rpm == 0)
-			{
-				// stop motor pwm duty cycle
-				motor_set_pwm_duty_cycle_target(0);
+		// stop motor pwm duty cycle
+		motor_set_pwm_duty_cycle_target(0);
 
-				// clear startup pedal
-				ui8_startup_pedal = 0;
-
-				// clear startup throttle
-				ui8_startup_throttle = 0;
-
-				// clear startup walk
-				ui8_startup_walk = 0;
-
-				// clear walk assist variables
-				ui8_walk_assist_flag = 0;
-				ui8_walk_assist_start = 0;
-				ui8_walk_assist_delay_off_flag = 0;
-				ui8_walk_assist_current_per_cent = 0;
-			}				
-		#else
-			// stop motor pwm duty cycle
-			motor_set_pwm_duty_cycle_target(0);
-
-			// clear startup pedal
-			ui8_startup_pedal = 0;
-
-			// clear startup throttle
-			ui8_startup_throttle = 0;
-
-			// clear startup walk
-			ui8_startup_walk = 0;
-
-			// clear walk assist variables
-			ui8_walk_assist_flag = 0;
-			ui8_walk_assist_start = 0;
-			ui8_walk_assist_delay_off_flag = 0;
-			ui8_walk_assist_current_per_cent = 0;
-		#endif			
+		// clear walk assist variables
+		ui8_walk_assist_flag = 0;
+		ui8_walk_assist_start = 0;
+		ui8_walk_assist_delay_off_flag = 0;
+		ui8_walk_assist_current_per_cent = 0;
 	}
 }
 
@@ -863,13 +802,13 @@ static void uart_receive_package(void)
 	{
 		// verify check code of the package
 		ui8_rx_check_code = 0x00;
-		for(ui8_i = 0; ui8_i < UART_NUMBER_DATA_BYTES_TO_RECEIVE; ui8_i++)
+		for(ui8_i = 0; ui8_i < RX_CHECK_CODE; ui8_i++)
 		{
 			ui8_rx_check_code += ui8_rx_buffer[ui8_i];
 		}
 
 		// see if check code is ok...
-		if(ui8_rx_check_code == ui8_rx_buffer[UART_NUMBER_DATA_BYTES_TO_RECEIVE])
+		if(ui8_rx_check_code == ui8_rx_buffer[RX_CHECK_CODE])
 		{
 			// enable walk assist
 			ui8_enable_walk_assist = 1;
@@ -1454,7 +1393,7 @@ static void uart_send_package(void)
 
 	// send the data to the LCD
 	// start up byte
-	ui8_tx_buffer[0] = 0x43;
+	ui8_tx_buffer[0] = TX_STX;
 
 	// clear fault code
 	configuration_variables.ui8_fault_code = NO_FAULT;
@@ -1650,14 +1589,14 @@ static void uart_send_package(void)
 
 	// prepare check code of the package
 	ui8_tx_check_code = 0x00;
-	for(ui8_i = 0; ui8_i < UART_NUMBER_DATA_BYTES_TO_SEND; ui8_i++)
+	for(ui8_i = 0; ui8_i < TX_CHECK_CODE; ui8_i++)
 	{
 		ui8_tx_check_code += ui8_tx_buffer[ui8_i];
 	}
-	ui8_tx_buffer[UART_NUMBER_DATA_BYTES_TO_SEND] = ui8_tx_check_code;
+	ui8_tx_buffer[TX_CHECK_CODE] = ui8_tx_check_code;
 
 	// send the full package to UART
-	for(ui8_i = 0; ui8_i <= UART_NUMBER_DATA_BYTES_TO_SEND; ui8_i++)
+	for(ui8_i = 0; ui8_i < UART_TX_BUFFER_LEN; ui8_i++)
 	{
 		putchar(ui8_tx_buffer[ui8_i]);
 	}
@@ -1698,7 +1637,6 @@ static void calc_pedal_force_and_torque(void)
   // calculate torque on pedals
   ui16_pedal_torque_x100 = (uint16_t) ui8_torque_sensor * (uint16_t) ADC_STEP_PEDAL_TORQUE_X100;
   ui16_pedal_torque_x10 = ui16_pedal_torque_x100 / 10;
-
 	
 	// --- OLD CALCULATION FOR ADC STEP PEDAL TORQUE ------------------------------------------------
 	// Torque (force) value found experimentaly.
@@ -1875,46 +1813,44 @@ static void apply_speed_limit(uint16_t ui16_speed_x10, uint8_t ui8_max_speed, ui
 //=================================================================================================
 //
 //=================================================================================================
-static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_startup, uint8_t *ui8_target_current)
+static void apply_throttle(uint8_t ui8_throttle_value, uint8_t *ui8_target_current)
 {
-  uint8_t ui8_temp = (uint8_t) (map((uint32_t) ui8_throttle_value,
-                                    (uint32_t) 0,
-                                    (uint32_t) 255,
-                                    (uint32_t) 0,
-                                    (uint32_t) ui8_adc_battery_current_max));
+  // apply throttle if it is enabled and the motor temperature limit function is not enabled instead
+  if(configuration_variables.ui8_temperature_limit_feature_enabled == 0)
+  {
+    // overide ui8_adc_battery_current_max with throttle value only when user is using throttle
+    if(ui8_throttle_value)
+    {
+      uint8_t ui8_temp = (uint8_t) (map ((uint32_t) ui8_throttle_value,
+                                         (uint32_t) 0,
+                                         (uint32_t) 255,
+                                         (uint32_t) 0,
+                                         (uint32_t) ui8_adc_battery_current_max));
 
-  // set target current
-	#if 1
-  *ui8_target_current = ui8_temp;
-	#else
-  *ui8_target_current = ui8_max(*ui8_target_current, ui8_temp);
-	#endif
-
-  // enable motor assistance because user is using throttle
-  if(*ui8_target_current){*ui8_startup = 1;}
+      // set target current
+      *ui8_target_current = ui8_temp;
+    }
+  }
 }
 #endif
 
 //=================================================================================================
 //
 //=================================================================================================
-static void apply_walk_assist(uint8_t ui8_walk_assist_value, uint8_t *ui8_startup, uint8_t *ui8_target_current)
+static void apply_walk_assist(uint8_t ui8_walk_assist_value, uint8_t *ui8_target_current)
 {
-	uint8_t ui8_temp = (uint8_t) (map((uint32_t) ui8_walk_assist_value,
-                                    (uint32_t) 0,
-                                    (uint32_t) 255,
-                                    (uint32_t) 0,
-                                    (uint32_t) ui8_adc_battery_current_max));
+	// overide ui8_adc_battery_current_max with walk assist value only when user is using walk assist
+	if(ui8_walk_assist_value)
+	{
+		uint8_t ui8_temp = (uint8_t) (map((uint32_t) ui8_walk_assist_value,
+																			(uint32_t) 0,
+																			(uint32_t) 255,
+																			(uint32_t) 0,
+																			(uint32_t) ui8_adc_battery_current_max));
 
-	// set target current
-	#if 1
-	*ui8_target_current = ui8_temp;
-	#else
-	*ui8_target_current = ui8_max(*ui8_target_current, ui8_temp);
-	#endif
-
-	// flag that motor assistance should happen because we may be running with walk assist
-	if(*ui8_target_current){*ui8_startup = 1;}
+		// set target current
+		*ui8_target_current = ui8_temp;
+	}
 }
 
 //=================================================================================================
@@ -2235,7 +2171,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
     switch(ui8_state_machine)
     {
       case 0:
-      if(ui8_byte_received == 0x59) // see if we get start package byte
+      if(ui8_byte_received == RX_STX) // see if we get start package byte
       {
         ui8_rx_buffer[ui8_rx_counter] = ui8_byte_received;
         ui8_rx_counter++;
@@ -2253,7 +2189,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
       ui8_rx_counter++;
 
       // see if is the last byte of the package
-      if(ui8_rx_counter > 8)
+      if(ui8_rx_counter > UART_RX_BUFFER_LEN)
       {
         ui8_rx_counter = 0;
         ui8_state_machine = 0;
